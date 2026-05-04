@@ -42,4 +42,16 @@ app.get("/api/health", (req, res) => {
   res.end(JSON.stringify({ status: "ok", uptime }));
 });
 
+app.post("/api/greet", async (req, res) => {
+  let body = "";
+  req.on("data", (chunk) => {
+    body += chunk.toString();
+  });
+  req.on("end", () => {
+    const data = JSON.parse(body);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ greeting: `Hello, ${data.name}!` }));
+  });
+});
+
 module.exports = app;
