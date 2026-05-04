@@ -1,5 +1,6 @@
 const app = {
   routes: {},
+  startTime: Date.now(),
 
   get(path, handler) {
     this.routes[`GET ${path}`] = handler;
@@ -33,6 +34,12 @@ const app = {
 app.get("/", (req, res) => {
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ message: "Hello from KCD New York!" }));
+});
+
+app.get("/api/health", (req, res) => {
+  const uptime = Math.floor((Date.now() - app.startTime) / 1000);
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ status: "ok", uptime }));
 });
 
 module.exports = app;
