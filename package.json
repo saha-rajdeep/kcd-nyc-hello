@@ -1,0 +1,12 @@
+{
+  "name": "kcd-nyc-hello",
+  "version": "1.0.0",
+  "description": "Hello World API — KCD New York demo app for Claude Code agents",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/app.test.js"
+  },
+  "keywords": [],
+  "license": "MIT"
+}
