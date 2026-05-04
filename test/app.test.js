@@ -34,6 +34,31 @@ describe("GET /", () => {
   });
 });
 
+describe("GET /api/health", () => {
+  it("returns 200 with health status", async () => {
+    const req = mockReq("GET", "/api/health");
+    const res = mockRes();
+    await app.handle(req, res);
+    assert.strictEqual(res.statusCode, 200);
+  });
+
+  it("returns JSON with status and uptime", async () => {
+    const req = mockReq("GET", "/api/health");
+    const res = mockRes();
+    await app.handle(req, res);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.status, "ok");
+    assert.strictEqual(typeof body.uptime, "number");
+  });
+
+  it("returns correct Content-Type header", async () => {
+    const req = mockReq("GET", "/api/health");
+    const res = mockRes();
+    await app.handle(req, res);
+    assert.strictEqual(res.headers["Content-Type"], "application/json");
+  });
+});
+
 describe("Unknown route", () => {
   it("returns 404", async () => {
     const req = mockReq("GET", "/nope");
