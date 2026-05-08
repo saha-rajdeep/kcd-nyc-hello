@@ -3,8 +3,32 @@ const assert = require("node:assert");
 const app = require("../src/app");
 
 // Helper to create mock req/res
-function mockReq(method, url) {
-  return { method, url };
+function mockReq(method, url, body = null) {
+  const listeners = {};
+  let dataHandled = false;
+  const req = {
+    method,
+    url,
+    on(event, handler) {
+      if (!listeners[event]) listeners[event] = [];
+      listeners[event].push(handler);
+      // For POST with body, emit data and end events immediately after end handler is registered
+      if (body !== null && event === "end" && !dataHandled) {
+        dataHandled = true;
+        // Execute on next tick to allow synchronous code to complete
+        Promise.resolve().then(() => {
+          if (listeners["data"]) {
+            listeners["data"].forEach(h => h(body));
+          }
+          if (listeners["end"]) {
+            listeners["end"].forEach(h => h());
+          }
+        });
+      }
+    }
+  };
+
+  return req;
 }
 
 function mockRes() {
@@ -56,6 +80,42 @@ describe("GET /api/health", () => {
     const res = mockRes();
     await app.handle(req, res);
     assert.strictEqual(res.headers["Content-Type"], "application/json");
+  });
+});
+
+describe("POST /api/greet", () => {
+  it("returns greeting for valid name", async () => {
+    const req = mockReq("POST", "/api/greet", '{"name":"Alice"}');
+    const res = mockRes();
+    await app.handle(req, res);
+    assert.strictEqual(res.statusCode, 200);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.greeting, "Hello, Alice!");
+  });
+
+  it("returns correct Content-Type header", async () => {
+    const req = mockReq("POST", "/api/greet", '{"name":"Bob"}');
+    const res = mockRes();
+    await app.handle(req, res);
+    assert.strictEqual(res.headers["Content-Type"], "application/json");
+  });
+
+  it("handles missing name field gracefully", async () => {
+    const req = mockReq("POST", "/api/greet", '{}');
+    const res = mockRes();
+    await app.handle(req, res);
+    assert.strictEqual(res.statusCode, 200);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.greeting, "Hello, undefined!");
+  });
+
+  it("handles invalid JSON payload", async () => {
+    const req = mockReq("POST", "/api/greet", 'not json');
+    const res = mockRes();
+    await app.handle(req, res);
+    assert.strictEqual(res.statusCode, 500);
+    const body = JSON.parse(res.body);
+    assert.strictEqual(body.error, "Internal server error");
   });
 });
 
