@@ -42,4 +42,21 @@ app.get("/api/health", (req, res) => {
   res.end(JSON.stringify({ status: "ok", uptime }));
 });
 
+app.post("/api/echo", async (req, res) => {
+  let body = "";
+  req.on("data", (chunk) => {
+    body += chunk.toString();
+  });
+  req.on("end", () => {
+    try {
+      const data = JSON.parse(body);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ...data, receivedAt: new Date().toISOString() }));
+    } catch (err) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Internal server error" }));
+    }
+  });
+});
+
 module.exports = app;
